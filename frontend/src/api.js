@@ -1,4 +1,19 @@
-const BASE = 'http://localhost:8001';
+// Derive backend base URL.
+//   1. REACT_APP_API_BASE env var wins (set at build time).
+//   2. Cloud Shell preview: hostnames are like "3000-cs-xxxx.cloudshell.dev" —
+//      swap the leading port with 8001 so frontend and backend share host.
+//   3. Default to localhost:8001 for dev.
+function deriveHttpBase() {
+  if (process.env.REACT_APP_API_BASE) return process.env.REACT_APP_API_BASE;
+  if (typeof window !== 'undefined') {
+    const { protocol, host } = window.location;
+    if (/^\d+-/.test(host)) return `${protocol}//${host.replace(/^\d+-/, '8001-')}`;
+  }
+  return 'http://localhost:8001';
+}
+
+export const BASE    = deriveHttpBase();
+export const WS_BASE = BASE.replace(/^http/, 'ws');
 
 /**
  * POST /chat — send a question, get an answer.

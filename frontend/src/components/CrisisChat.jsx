@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { WS_BASE } from '../api';
 
 const SEV_COLOR  = { critical: '#ef4444', high: '#f97316', medium: '#f59e0b', low: '#06b6d4' };
 const ROLE_COLOR = { CEO: '#fcd34d', Legal: '#a5b4fc', Engineering: '#6ee7b7', Reporter: '#fca5a5' };
-const WS_URL     = 'ws://localhost:8001/ws/crisis';
+const WS_URL     = `${WS_BASE}/ws/crisis`;
 const REPORTER_INTERVAL = 45;
 
 export default function CrisisChat({ finding, sessionId, onClose }) {
@@ -79,7 +80,7 @@ export default function CrisisChat({ finding, sessionId, onClose }) {
     };
 
     ws.onerror = () => {
-      setError('Cannot reach backend on port 8000. Is uvicorn running?');
+      setError('Cannot reach backend on port 8001. Is uvicorn running?');
       setConnected(false);
     };
 

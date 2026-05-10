@@ -6,10 +6,11 @@ import DocsTab       from './components/DocsTab';
 import SecurityTab   from './components/SecurityTab';
 import ChatTab       from './components/ChatTab';
 import CrisisChat    from './components/CrisisChat';
+import { WS_BASE }   from './api';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const SESSION_ID  = uuidv4();
-const WS_URL      = 'ws://localhost:8001/ws/analyze';
+const WS_URL      = `${WS_BASE}/ws/analyze`;
 const TIMEOUT_MS  = 180_000;
 
 const INITIAL_STATUS = {
@@ -197,7 +198,7 @@ export default function App() {
       setIsAnalyzing(false);
       analyzingRef.current = false;
       setGlobalError(
-        'Cannot reach the backend on port 8000. Start it with:\n  cd backend && uvicorn main:app --reload'
+        'Cannot reach the backend on port 8001. Start it with:\n  cd backend && uvicorn main:app --port 8001 --reload'
       );
     };
 
