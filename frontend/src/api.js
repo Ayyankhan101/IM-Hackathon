@@ -1,4 +1,4 @@
-const BASE = 'http://localhost:8000';
+const BASE = 'http://localhost:8001';
 
 /**
  * POST /chat — send a question, get an answer.
@@ -17,7 +17,7 @@ export async function postChat(sessionId, question) {
     if (err.name === 'TimeoutError') {
       throw new Error('Request timed out — the backend took too long to respond.');
     }
-    throw new Error('Cannot reach the backend. Make sure it is running on port 8000.');
+    throw new Error('Cannot reach the backend. Make sure it is running on port 8001.');
   }
 
   if (!res.ok) {

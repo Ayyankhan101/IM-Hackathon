@@ -9,7 +9,7 @@ import CrisisChat    from './components/CrisisChat';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const SESSION_ID  = uuidv4();
-const WS_URL      = 'ws://localhost:8000/ws/analyze';
+const WS_URL      = 'ws://localhost:8001/ws/analyze';
 const TIMEOUT_MS  = 180_000;
 
 const INITIAL_STATUS = {

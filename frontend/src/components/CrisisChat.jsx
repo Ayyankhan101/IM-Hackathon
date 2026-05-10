@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 const SEV_COLOR  = { critical: '#ef4444', high: '#f97316', medium: '#f59e0b', low: '#06b6d4' };
 const ROLE_COLOR = { CEO: '#fcd34d', Legal: '#a5b4fc', Engineering: '#6ee7b7', Reporter: '#fca5a5' };
-const WS_URL     = 'ws://localhost:8000/ws/crisis';
+const WS_URL     = 'ws://localhost:8001/ws/crisis';
 const REPORTER_INTERVAL = 45;
 
 export default function CrisisChat({ finding, sessionId, onClose }) {
