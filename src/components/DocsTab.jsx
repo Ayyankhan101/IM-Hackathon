@@ -38,7 +38,7 @@ function EndpointCard({ doc, idx }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
         <MethodBadge method={doc.method} />
         <code style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, color: '#818cf8', letterSpacing: '-0.01em', fontWeight: 500, wordBreak: 'break-all' }}>
-          {doc.route || '—'}
+          {doc.path || doc.route || '—'}
         </code>
       </div>
       {doc.description && (
@@ -141,7 +141,7 @@ export default function DocsTab({ docs, isAnalyzing, analyzed }) {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {filtered.map((doc, i) => <EndpointCard key={`${doc.method}-${doc.route}-${i}`} doc={doc} idx={i} />)}
+          {filtered.map((doc, i) => <EndpointCard key={`${doc.method}-${doc.path || doc.route}-${i}`} doc={doc} idx={i} />)}
         </div>
       )}
     </div>

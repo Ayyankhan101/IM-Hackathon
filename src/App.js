@@ -149,13 +149,31 @@ export default function App() {
       try { data = JSON.parse(event.data); }
       catch { console.warn('[WS] Non-JSON message received:', event.data); return; }
 
+      // Handle backend event-style messages: {type:"event", agent:"scanner", message:"..."}
+      if (data.type === 'event' && data.agent) {
+        const agentKey = data.agent === 'api_doc' ? 'api_docs' : data.agent;
+        setAgentStatus(prev => ({ ...prev, [agentKey]: 'done' }));
+      }
+      if (data.type === 'status') {
+        setAgentStatus(prev => ({ ...prev, scanner: 'running' }));
+      }
+
+      // Handle both legacy agent_status dict and new type-based protocol
       if (data.agent_status)         setAgentStatus(prev => ({ ...prev, ...data.agent_status }));
       if (data.architecture_diagram) setDiagram(data.architecture_diagram);
+      // api_docs (frontend key) OR api_endpoints (backend key)
       if (data.api_docs?.length)     setApiDocs(data.api_docs);
+      if (data.api_endpoints?.length) setApiDocs(data.api_endpoints);
       if (data.security_findings)    setFindings(data.security_findings);
       if (data.repo_name)            setRepoName(data.repo_name);
 
-      if (data.done) {
+      // done: true (legacy) OR type:"result" (new backend protocol)
+      if (data.done || data.type === 'result') {
+        if (data.type === 'result') {
+          if (data.architecture_diagram) setDiagram(data.architecture_diagram);
+          if (data.api_endpoints?.length) setApiDocs(data.api_endpoints);
+          if (data.security_findings)    setFindings(data.security_findings);
+        }
         clearInterval(timerRef.current);
         clearTimeout(timeoutRef.current);
         setIsAnalyzing(false);
@@ -164,8 +182,8 @@ export default function App() {
         ws.close();
       }
 
-      if (data.error) {
-        setGlobalError(`Backend error: ${data.error}`);
+      if (data.error || data.type === 'error') {
+        setGlobalError(`Backend error: ${data.error || data.message}`);
         clearInterval(timerRef.current);
         setIsAnalyzing(false);
         analyzingRef.current = false;
