@@ -107,3 +107,38 @@ def build_graph() -> StateGraph:
 # Singleton — compiled once at import time, reused across all WebSocket sessions
 graph = build_graph()
 logger.info("LangGraph analysis graph compiled and ready")
+
+
+# ── Crisis graph (Section 9 — stretch) ────────────────────────────────────────
+
+def build_crisis_graph():
+    """
+    Section 9: Engineering briefs first, then router rotates CEO/Legal/Engineering
+    until reporter publishes, crisis resolved, or 10-turn cap reached.
+    """
+    from agents.crisis.ceo import ceo_node
+    from agents.crisis.legal import legal_node
+    from agents.crisis.engineer import engineer_node
+    from agents.crisis.router import crisis_router
+
+    g = StateGraph(RepoState)
+    g.add_node("ceo",      ceo_node)
+    g.add_node("legal",    legal_node)
+    g.add_node("engineer", engineer_node)
+
+    # Engineering briefs first (Section 9.1 step 3)
+    g.add_edge(START, "engineer")
+
+    # After each agent speaks, router decides next node OR ends
+    for node in ("ceo", "legal", "engineer"):
+        g.add_conditional_edges(
+            node,
+            crisis_router,
+            {"ceo": "ceo", "legal": "legal", "engineer": "engineer", "END": END},
+        )
+
+    return g.compile()
+
+
+crisis_graph = build_crisis_graph()
+logger.info("LangGraph crisis graph compiled and ready")

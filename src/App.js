@@ -409,7 +409,7 @@ export default function App() {
 
       {/* Crisis Room overlay */}
       {crisisFinding && (
-        <CrisisChat finding={crisisFinding} onClose={() => setCrisisFinding(null)} />
+        <CrisisChat finding={crisisFinding} sessionId={SESSION_ID} onClose={() => setCrisisFinding(null)} />
       )}
     </div>
   );

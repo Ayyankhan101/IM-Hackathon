@@ -12,8 +12,11 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+import asyncio
+
 from agents.chat import run_chat_agent
-from orchestrator import graph
+from agents.crisis.reporter import reporter_loop
+from orchestrator import graph, crisis_graph
 
 logging.basicConfig(
     level=logging.INFO,
@@ -194,6 +197,110 @@ async def chat_endpoint(req: ChatRequest):
     ])
 
     return {"answer": answer}
+
+
+# ── Crisis WebSocket (Section 9 stretch) ──────────────────────────────────────
+
+@app.websocket("/ws/crisis")
+async def ws_crisis(ws: WebSocket):
+    """
+    Frontend opens this with {session_id, finding_id}. Engineering briefs first,
+    then router rotates CEO/Legal/Engineering. A separate asyncio task runs the
+    Reporter on a 45s timer reading public_signals.
+
+    End conditions: reporter publishes (lost) | crisis_resolved (won) | 10 turns.
+    """
+    await ws.accept()
+
+    try:
+        payload = await ws.receive_json()
+    except Exception:
+        await ws.close(code=1003)
+        return
+
+    session_id = payload.get("session_id")
+    finding_id = payload.get("finding_id")
+    session    = sessions.get(session_id)
+
+    if not session:
+        await ws.send_json({"error": "Session not found. Run /ws/analyze first."})
+        await ws.close()
+        return
+
+    findings = session.get("security_findings", [])
+    if not findings:
+        await ws.send_json({"error": "No security findings to dramatise."})
+        await ws.close()
+        return
+
+    initial = {
+        **_initial_state(""),
+        "security_findings":   findings,
+        "selected_finding_id": finding_id or findings[0].get("id"),
+        "crisis_messages":     [],
+        "crisis_turn":         0,
+        "public_signals":      [],
+        "reporter_published":  False,
+        "crisis_resolved":     False,
+    }
+
+    logger.info("Crisis started session=%s finding=%s", session_id, finding_id)
+
+    # Shared state ref the reporter loop reads concurrently
+    state_ref: dict = dict(initial)
+
+    async def ws_send(msg: dict):
+        try:
+            await ws.send_json(msg)
+        except Exception:
+            pass
+
+    reporter_task = asyncio.create_task(reporter_loop(state_ref, ws_send))
+
+    try:
+        async for chunk in crisis_graph.astream(initial, stream_mode="updates"):
+            for node, update in chunk.items():
+                # Persist into shared state for reporter
+                for k in ("crisis_messages", "crisis_turn", "public_signals"):
+                    if k in update:
+                        if isinstance(update[k], list):
+                            state_ref.setdefault(k, [])
+                            state_ref[k] = state_ref[k] + update[k]
+                        else:
+                            state_ref[k] = update[k]
+
+                # Stream each new agent message to frontend
+                for msg in update.get("crisis_messages", []):
+                    await ws_send({
+                        "agent":     msg.get("agent"),
+                        "kind":      "message",
+                        "content":   msg.get("content"),
+                        "turn":      msg.get("turn"),
+                        "timestamp": __import__("time").time(),
+                    })
+
+                if state_ref.get("reporter_published"):
+                    break
+            if state_ref.get("reporter_published"):
+                break
+
+        if not state_ref.get("reporter_published"):
+            state_ref["crisis_resolved"] = True
+            await ws_send({"kind": "resolved", "content": "Crisis contained — Legal-approved statement issued."})
+
+    except WebSocketDisconnect:
+        logger.info("Crisis client disconnected session=%s", session_id)
+    except Exception as exc:
+        logger.error("Crisis pipeline error: %s", exc)
+        await ws_send({"error": str(exc)})
+    finally:
+        reporter_task.cancel()
+        try:
+            await reporter_task
+        except (asyncio.CancelledError, Exception):
+            pass
+        await ws_send({"kind": "end"})
+        await ws.close()
 
 
 # ── Health check ───────────────────────────────────────────────────────────────
