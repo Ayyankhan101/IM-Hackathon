@@ -26,9 +26,9 @@ if [ ! -d "backend/venv" ]; then
   deactivate
 fi
 
-if [ ! -d "node_modules" ]; then
+if [ ! -d "frontend/node_modules" ]; then
   echo "Installing npm packages..."
-  npm install
+  ( cd frontend && npm install )
 fi
 
 # ── Process management ───────────────────────────────────────────────────────
@@ -68,7 +68,7 @@ done
 # ── Frontend ─────────────────────────────────────────────────────────────────
 
 echo "Starting frontend on http://localhost:3000 ..."
-BROWSER=none npm start &
+( cd frontend && BROWSER=none npm start ) &
 FRONTEND_PID=$!
 
 echo ""

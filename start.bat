@@ -30,14 +30,17 @@ if not exist "backend\venv" (
     deactivate
 )
 
-if not exist "node_modules" (
+if not exist "frontend\node_modules" (
     echo Installing npm packages...
+    pushd frontend
     call npm install
     if errorlevel 1 (
         echo ERROR: npm install failed. Install Node.js 18+.
+        popd
         pause
         exit /b 1
     )
+    popd
 )
 
 REM ── Backend ───────────────────────────────────────────────────────────────
@@ -51,7 +54,7 @@ timeout /t 5 /nobreak >nul
 REM ── Frontend ──────────────────────────────────────────────────────────────
 
 echo Starting frontend on http://localhost:3000 ...
-start "GitMind Frontend" cmd /k "cd /d %~dp0 && set BROWSER=none && npm start"
+start "GitMind Frontend" cmd /k "cd /d %~dp0frontend && set BROWSER=none && npm start"
 
 echo.
 echo ──────────────────────────────────────────────

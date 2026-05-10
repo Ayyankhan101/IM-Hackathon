@@ -22,6 +22,11 @@ chroma_db/
 
 # ── Node / React ─────────────────────────────────────────────────────────────
 node_modules/
+frontend/node_modules/
+frontend/build/
+frontend/.pnp
+frontend/.pnp.js
+frontend/coverage/
 /.pnp
 .pnp.js
 /coverage
