@@ -73,12 +73,26 @@ async def ws_analyze(ws: WebSocket):
 
         _sessions[session_id] = final_state
 
-        # Stream events back
+        # Emit agent_status running for scanner first
+        await ws.send_json({"type": "agent_status", "agent_status": {"scanner": "running"}})
+
+        # Stream events back — each agent_done becomes an agent_status update
         for event in final_state.get("events", []):
             await ws.send_json({"type": "event", **event})
+            if event.get("type") == "agent_done":
+                agent = event.get("agent", "")
+                # map backend agent name → frontend agentStatus key
+                key_map = {"api_doc": "api_docs", "rag_setup": "chat"}
+                frontend_key = key_map.get(agent, agent)
+                await ws.send_json({
+                    "type": "agent_status",
+                    "agent_status": {"scanner": "done", frontend_key: "done"},
+                })
 
+        # Final result — use api_endpoints key (frontend now accepts both)
         await ws.send_json({
             "type": "result",
+            "done": True,
             "architecture_diagram": final_state.get("architecture_diagram", ""),
             "api_endpoints": final_state.get("api_endpoints", []),
             "security_findings": final_state.get("security_findings", []),
